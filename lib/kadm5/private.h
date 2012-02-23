@@ -36,6 +36,8 @@
 #ifndef __kadm5_privatex_h__
 #define __kadm5_privatex_h__
 
+#include <sys/un.h>
+
 struct kadm_func {
     kadm5_ret_t (*chpass_principal) (void *, krb5_principal, int,
 				     int, krb5_key_salt_tuple*, const char*);
