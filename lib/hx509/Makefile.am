@@ -62,8 +62,6 @@ dist_libhx509_la_SOURCES = \
 	error.c \
 	env.c \
 	file.c \
-	$(srcdir)/hx509-private.h \
-	$(srcdir)/hx509-protos.h \
 	hx509.h \
 	hx_locl.h \
 	sel.c \
@@ -147,10 +145,10 @@ $(ALL_OBJECTS): $(HX509_PROTOS)
 $(libhx509_la_OBJECTS): $(srcdir)/hx_locl.h
 $(libhx509_la_OBJECTS): ocsp_asn1.h pkcs10_asn1.h
 
-$(srcdir)/hx509-protos.h:
+$(srcdir)/hx509-protos.h: $(dist_libhx509_la_SOURCES)
 	$(heim_verbose)cd $(srcdir) && perl ../../cf/make-proto.pl -R '^(_|^C)' -E HX509_LIB -q -P comment -o hx509-protos.h $(dist_libhx509_la_SOURCES) || rm -f hx509-protos.h
 
-$(srcdir)/hx509-private.h:
+$(srcdir)/hx509-private.h: $(dist_libhx509_la_SOURCES)
 	$(heim_verbose)cd $(srcdir) && perl ../../cf/make-proto.pl -q -P comment -p hx509-private.h $(dist_libhx509_la_SOURCES) || rm -f hx509-private.h
 
 bin_PROGRAMS = hxtool
