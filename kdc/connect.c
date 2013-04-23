@@ -1094,14 +1094,30 @@ start_kdc(krb5_context context,
 
     socket_set_nonblocking(islive[1], 1);
 
+    tv1.tv_sec  = 0;
+    tv1.tv_usec = 0;
+
     while (exit_flag == 0) {
-	if (num_kdcs > 0)
-	    num_kdcs -= reap_kids(context, config, pids, max_kdcs);
+
+	/* Slow down the creation of KDCs... */
+
+	gettimeofday(&tv2, NULL);
+	if (tv1.tv_sec == tv2.tv_sec && tv2.tv_usec - tv1.tv_usec < 25000) {
+#if 0	/* XXXrcd: should print a message... */
+	    kdc_log(context, config, 0, "Spawning KDCs too quickly, "
+		"pausing for 50ms");
+#endif
+	    select_sleep(12500);
+	    continue;
+	}
 
 	if (num_kdcs >= max_kdcs) {
 	    num_kdcs -= reap_kid(context, config, pids, max_kdcs, 0);
 	    continue;
 	}
+
+	if (num_kdcs > 0)
+	    num_kdcs -= reap_kids(context, config, pids, max_kdcs);
 
 	pid = fork();
 	switch (pid) {
@@ -1120,6 +1136,7 @@ start_kdc(krb5_context context,
 	    pids[i] = pid;
 	    kdc_log(context, config, 0, "sub-KDC started: %d", pid);
 	    num_kdcs++;
+	    gettimeofday(&tv1, NULL);
 	    break;
 	}
     }
