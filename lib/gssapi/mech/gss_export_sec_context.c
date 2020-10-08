@@ -40,6 +40,8 @@ gss_export_sec_context(OM_uint32 *minor_status,
 
 	*minor_status = 0;
 
+	/* XXXrcd: we must fix this up */
+
 	if (interprocess_token)
 	    _mg_buffer_zero(interprocess_token);
 	else

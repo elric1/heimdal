@@ -69,6 +69,7 @@ static int client_time_offset = 0;
 static int server_time_offset = 0;
 static int max_loops = 0;
 static char *limit_enctype_string = NULL;
+static int token_split = 0;
 static int version_flag = 0;
 static int verbose_flag = 0;
 static int help_flag	= 0;
@@ -212,10 +213,16 @@ loop(gss_OID mechoid,
     }
 
     while (!server_done || !client_done) {
+	gss_buffer_desc tmp;
+	size_t len;
+	size_t inc;
+	size_t offset;
+
 	num_loops++;
 
 	gsskrb5_set_time_offset(client_time_offset);
 
+fprintf(stderr, "init sec context\n");
 	maj_stat = gss_init_sec_context(&min_stat,
 					init_cred,
 					cctx,
@@ -247,20 +254,32 @@ loop(gss_OID mechoid,
 
 	gsskrb5_set_time_offset(server_time_offset);
 
-	maj_stat = gss_accept_sec_context(&min_stat,
-					  sctx,
-					  GSS_C_NO_CREDENTIAL,
-					  &output_token,
-					  channel_bindings_p,
-					  &src_name,
-					  &actual_mech_server,
-					  &input_token,
-					  &ret_sflags,
-					  NULL,
-					  deleg_cred);
-	if (GSS_ERROR(maj_stat))
-		errx(1, "accept_sec_context: %s",
-		     gssapi_err(maj_stat, min_stat, actual_mech_server));
+	len = output_token.length;
+	inc = token_split ? token_split : len;
+	offset = 0;
+	do {
+	    if (len < inc)
+		inc = len;
+	    tmp.length = inc;
+	    tmp.value  = (char *)output_token.value + offset;
+
+	    maj_stat = gss_accept_sec_context(&min_stat,
+					      sctx,
+					      GSS_C_NO_CREDENTIAL,
+					      &tmp,
+					      channel_bindings_p,
+					      &src_name,
+					      &actual_mech_server,
+					      &input_token,
+					      &ret_sflags,
+					      NULL,
+					      deleg_cred);
+	    if (GSS_ERROR(maj_stat))
+		    errx(1, "accept_sec_context: %s",
+			 gssapi_err(maj_stat, min_stat, actual_mech_server));
+	    offset += inc;
+	    len    -= inc;
+	} while (len > 0);
 
 	gsskrb5_get_time_offset(&server_time_offset);
 
@@ -688,6 +707,7 @@ static struct getargs args[] = {
     {"client-time-offset",	0, arg_integer,	&client_time_offset, "time", NULL },
     {"server-time-offset",	0, arg_integer,	&server_time_offset, "time", NULL },
     {"max-loops",	0, arg_integer,	&max_loops, "time", NULL },
+    {"token-split",	0, arg_integer, &token_split, "bytes", NULL },
     {"version",	0,	arg_flag,	&version_flag, "print version", NULL },
     {"verbose",	'v',	arg_flag,	&verbose_flag, "verbose", NULL },
     {"help",	0,	arg_flag,	&help_flag,  NULL, NULL }

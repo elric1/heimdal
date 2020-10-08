@@ -30,8 +30,13 @@
 #include <gssapi_mech.h>
 
 struct _gss_context {
-	gssapi_mech_interface	gc_mech;
-	gss_ctx_id_t		gc_ctx;
+	gss_buffer_desc		 gc_input;
+	char			*gc_free_this;
+	size_t			 gc_target_len;
+	size_t			 gc_oid_offset;
+	gssapi_mech_interface	 gc_mech;
+	gss_ctx_id_t		 gc_ctx;
+	int			 gc_initial;
 };
 
 void
